@@ -1,27 +1,29 @@
 {
-  "name": "rsdcs",
-  "version": "0.1.0",
-  "description": "A RuneScape Companion and Discord bot that synchronizes a RuneScape Friends/Clan Chat with Discord chat",
-  "main": "main.js",
-  "scripts": {},
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/aeramos/RuneScape-Discord-Chat-Sync.git"
-  },
-  "keywords": [],
-  "author": "Alejandro Ramos <alejandro.ramos.work@gmail.com>",
-  "license": "AGPL-3.0+",
-  "bugs": {
-    "url": "https://github.com/aeramos/RuneScape-Discord-Chat-Sync/issues"
-  },
-  "homepage": "https://github.com/aeramos/RuneScape-Discord-Chat-Sync#readme",
-  "dependencies": {
-    "discord.js": "^11.0.0",
-    "puppeteer": "^1.1.0"
-  },
-  "peerDependencies": {},
-  "devDependencies": {},
-  "engines": {
-    "node": "^8.0.0"
-  }
+    "name": "rsdcs",
+    "version": "0.1.0",
+    "description": "A RuneScape Companion and Discord bot that synchronizes a RuneScape Friends/Clan Chat with Discord chat",
+    "main": "main.js",
+    "scripts": {
+        "start": "node main.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/aeramos/RuneScape-Discord-Chat-Sync.git"
+    },
+    "keywords": [],
+    "author": "Alejandro Ramos <alejandro.ramos.work@gmail.com>",
+    "license": "AGPL-3.0+",
+    "bugs": {
+        "url": "https://github.com/aeramos/RuneScape-Discord-Chat-Sync/issues"
+    },
+    "homepage": "https://github.com/aeramos/RuneScape-Discord-Chat-Sync#readme",
+    "dependencies": {
+        "discord.js": "^11.0.0",
+        "puppeteer": "^1.1.0"
+    },
+    "peerDependencies": {},
+    "devDependencies": {},
+    "engines": {
+        "node": "^8.0.0"
+    }
 }

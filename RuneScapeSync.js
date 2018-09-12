@@ -18,6 +18,7 @@
 
 const puppeteer = require("puppeteer");
 const fs = require("fs");
+const path = require('path');
 const Queue = require("./Queue");
 
 let frame;
@@ -27,16 +28,36 @@ let browser;
 let on = false;
 let sending = false;
 
-const lastIndex = {number: -1};
+const lastIndex = {
+    number: -1
+};
 let toQueue;
 let fromQueue;
 
 let config;
+let scripts1;
+let scripts = [];
+
+async function processRunescapeMessage(author, message) {
+    var split = message.split(' ');
+    var command = split[0].replace('.', '').toLowerCase();
+    message = message.replace('.');
+    if (!scripts[command]) return;
+    var _scripts = scripts[command].callbacks;
+    for (var i = 0; i < _scripts.length; i++) {
+        var script = _scripts[i];
+        if (!script.processRunescapeMessage) return;
+        script.processRunescapeMessage(author, message, command, split, fromQueue, toQueue);
+    }
+}
 
 async function startup(page) {
     async function waitForSelector(selector, timeout, hidden) {
         try {
-            await frame.waitForSelector(selector, {timeout: timeout, hidden: hidden});
+            await frame.waitForSelector(selector, {
+                timeout: timeout,
+                hidden: hidden
+            });
             return true;
         } catch (e) {
             await console.log(getDateTime() + ": Took too long to load");
@@ -104,13 +125,16 @@ async function startup(page) {
                                                 }
                                             });
 
-                                            await page.screenshot({path: config.configs.errorDirectory + dateTime + ": error1" + ".png"});
+                                            await page.screenshot({
+                                                path: config.configs.errorDirectory + dateTime + ": error1" + ".png"
+                                            });
                                             await console.log(dateTime + ": Saved screenshot as: " + dateTime + ".png");
                                         }
                                         on = false;
                                         await restart(page);
                                     } else if (output[0] !== "clear") { // there was a message
                                         fromQueue.push([output[0][0], output[0][1], new Date()]); // add the message to the discord queue
+                                        processRunescapeMessage(output[0][1], output[0][0]);
                                         setTimeout(handleRead, 0);
                                     } else { // the output was "clear" (there was no message)
                                         setTimeout(handleRead, 600);
@@ -208,7 +232,9 @@ async function read(page, lastIndex) {
                     } else {
                         messageElement = undefined;
                     }
-                    return [[messageElement, authorElement], lastIndex.number];
+                    return [
+                        [messageElement, authorElement], lastIndex.number
+                    ];
                 }
             }
         } else {
@@ -238,10 +264,32 @@ function sleep(ms) {
 }
 
 class RuneScapeSync {
-    constructor(toQueue1 = new Queue(), fromQueue1 = new Queue(), config1) {
+    constructor(toQueue1 = new Queue(), fromQueue1 = new Queue(), config1, scripts2) {
         fromQueue = fromQueue1;
         toQueue = toQueue1;
         config = config1;
+        scripts1 = scripts2;
+    }
+
+    async loadScripts() {
+        for (var i = 0; i < scripts1.length; i++) {
+            var mod = scripts1[i];
+            if (!mod.getRunescapeCommands) continue;
+            var commands = mod.getRunescapeCommands();
+            if (!Array.isArray(commands)) continue;
+            for (var k = 0; k < commands.length; k++) {
+                var command = commands[k];
+                if (!scripts[command]) {
+                    var sub = {
+                        callbacks: []
+                    };
+                    sub.callbacks.push(mod);
+                    scripts[command] = sub;
+                } else {
+                    scripts[command].callbacks.push(mod);
+                }
+            }
+        }
     }
 
     static get toQueueListener() {
@@ -252,8 +300,11 @@ class RuneScapeSync {
 
     async start() {
         await console.log(getDateTime() + ": Started bot");
-        browser = await puppeteer.launch({args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-web-security", "--user-data-dir"]});
+        browser = await puppeteer.launch({
+            args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-web-security", "--user-data-dir"]
+        });
         page = await browser.newPage();
+        await this.loadScripts();
         await startup(page);
     }
 

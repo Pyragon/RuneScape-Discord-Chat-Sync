@@ -26,6 +26,10 @@ let sending = false;
 let toQueue;
 let fromQueue;
 
+async function processDiscordMessage(author, message) {
+    console.log(`Author: ${author}, Message: ${message}`);
+}
+
 async function send() {
     if (!sending) {
         sending = true;
@@ -139,6 +143,7 @@ class DiscordSync {
                 const date = new Date();
                 clean.split('\n').forEach((e) => {
                     fromQueue.push([e, author, date]);
+                    processDiscordMessage(author, e);
                 });
             }
         });

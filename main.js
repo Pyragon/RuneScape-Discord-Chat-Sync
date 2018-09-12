@@ -20,6 +20,7 @@ const RuneScapeSync = require("./RuneScapeSync");
 const Queue = require("./Queue");
 const DiscordSync = require("./DiscordSync");
 const fs = require("fs");
+const path = require('path');
 const readline = require("readline").createInterface({
     input: process.stdin,
     output: process.stdout
@@ -27,13 +28,15 @@ const readline = require("readline").createInterface({
 
 const config = require("./config.json");
 
+let scripts = [];
+
 let runeScapePause = false;
 let discordPause = false;
 
 let toRuneScapeQueue = new Queue(RuneScapeSync.toQueueListener);
 let fromRuneScapeQueue = new Queue(() => {
     while (fromRuneScapeQueue.length() > 0) {
-        switch(fromRuneScapeQueue.getMessage(0)) {
+        switch (fromRuneScapeQueue.getMessage(0)) {
             case config.configs.runeScapePrefix + "help":
             case config.configs.runeScapePrefix + "info":
             case config.configs.runeScapePrefix + "license":
@@ -60,7 +63,8 @@ let fromDiscordQueue = new Queue(() => {
             case config.configs.discordPrefix + "license":
             case config.configs.discordPrefix + "source":
                 toDiscordQueue.push(["RuneScape-Discord Chat Sync is a free program licensed under the GNU AGPL-3.0\n" +
-                    "Help, source code, and full license info can be found on GitHub (https://github.com/aeramos/RuneScape-Discord-Chat-Sync)"]);
+                    "Help, source code, and full license info can be found on GitHub (https://github.com/aeramos/RuneScape-Discord-Chat-Sync)"
+                ]);
                 break;
             default:
                 if (!runeScapePause) {
@@ -72,13 +76,29 @@ let fromDiscordQueue = new Queue(() => {
     }
 });
 
-let rs = new RuneScapeSync(toRuneScapeQueue, fromRuneScapeQueue, config);
-let discord = new DiscordSync(toDiscordQueue, fromDiscordQueue, config);
+let rs = new RuneScapeSync(toRuneScapeQueue, fromRuneScapeQueue, config, scripts);
+let discord = new DiscordSync(toDiscordQueue, fromDiscordQueue, config, scripts);
 
-(async() => {
+(async () => {
+    await loadScripts();
     rs.start();
     discord.start();
 })();
+
+async function loadScripts() {
+    var items = await fs.readdirSync('./scripts');
+    for (var i = 0; i < items.length; i++) {
+        var item = items[i];
+        try {
+            var p = path.resolve('./scripts/' + item);
+            var mod = require(p)();
+            if (mod.processRunescapeMessage || mod.processDiscordMessage)
+                scripts.push(mod);
+        } catch (error) {
+            console.error(error);
+        }
+    }
+}
 
 readline.on("line", async (originalInput) => {
     const input = originalInput.toLowerCase().split(" ");
